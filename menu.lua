@@ -7,13 +7,14 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 
+
 -- include Corona's "widget" library
 local widget = require "widget"
 
 --------------------------------------------
 
 -- forward declarations and other locals
-local playBtn
+local pulo = false
 
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
@@ -33,7 +34,7 @@ function scene:create( event )
 	-- e.g. add display objects to 'sceneGroup', add touch listeners, etc.
 
 	-- display a background image
-	local background = display.newImageRect( "background.jpg", display.actualContentWidth, display.actualContentHeight )
+	local background = display.newImageRect( "sprites/floresta.png", display.actualContentWidth, display.actualContentHeight )
 	background.anchorX = 0
 	background.anchorY = 0
 	background.x = 0 + display.screenOriginX 
@@ -45,17 +46,20 @@ function scene:create( event )
 	titleLogo.y = 100
 	
 	-- create a widget button (which will loads level1.lua on release)
-	playBtn = widget.newButton{
-		label="Jogar",
-		labelColor = { default={255}, over={128} },
-		default="button.png",
-		over="button-over.png",
-		width=154, height=40,
-		onRelease = onPlayBtnRelease	-- event listener function
-	}
-	playBtn.x = display.contentCenterX
-	playBtn.y = display.contentHeight - 125
+	--playBtn = widget.newButton{
+	--	label="Play",
+	--	labelColor = { default={255}, over={128} },
+	--	default="button_play.png",
+	--	over="button-over.png",
+	--	width=154, height=40,
+	--	onRelease = onPlayBtnRelease	-- event listener function
+	--}
+	--playBtn.x = display.contentCenterX
+	--playBtn.y = display.contentHeight - 125
 	
+	playBtn = display.newImage("button_play.png", display.contentCenterX, display.contentCenterY+40)
+	playBtn:addEventListener("touch", onPlayBtnRelease)
+
 	-- all display objects must be inserted into group
 	sceneGroup:insert( background )
 	sceneGroup:insert( titleLogo )
@@ -69,6 +73,7 @@ function scene:show( event )
 	if phase == "will" then
 		-- Called when the scene is still off screen and is about to move on screen
 	elseif phase == "did" then
+		audio.play( soundTable["backgroundsnd"], {loops=-1})
 		-- Called when the scene is now on screen
 		-- 
 		-- INSERT code here to make the scene come alive
