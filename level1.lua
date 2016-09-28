@@ -55,18 +55,6 @@ function scene:create( event )
 	mte.drawObjects()
 	map = mte.setCamera({levelPosX = 0, levelPosY = 0,blockScale = 15.5})
 	mte.constrainCamera()
-----------------------------------------------------------------------------------
-
---[[	local background = display.newImageRect( "sprites/floresta.png", display.actualContentWidth, display.actualContentHeight)
-	background.anchorX = 0.08
-	background.anchorY = 0
-	background:setFillColor( .8 )
-
-	local chao = display.newRect(1,display.actualContentHeight-45,display.contentWidth*3, 1)
-
-	physics.addBody(chao, "static", { friction = 0.1})
-
-]]--
 --------------------MOVIMENTAÇÃO SPRITES------------------------
 
 	local SheetInfo = require("sprites.sprites")
@@ -86,14 +74,13 @@ function scene:create( event )
 
 	local playerProperties = mte.getObject({name = "player"})
 
-	local player = display.newSprite(sheet, sequencePrincesa)
+	player = display.newSprite(sheet, sequencePrincesa)
 	local setup = {
 			kind = "sprite",
-			layer = 1,
-			levelWidth = 60,
-			levelHeight = 60,
+			layer = 1,	
 			levelPosX = playerProperties[1].x, 
-			levelPosY = playerProperties[1].y
+			levelPosY = playerProperties[1].y,
+			offscreenPhysics = true
 }
 
 	--player.x = display.contentWidth * .1
@@ -102,6 +89,7 @@ function scene:create( event )
 	mte.physics.addBody(player, "dynamic", {friction = 0.2, bounce = 0.0, density = 0.4 })
 	mte.addSprite(player, setup)
 	mte.setCameraFocus(player)
+	mte.update()
 	--player:setSequence("princesaParada")
 	player.isFixedRotation = true
 	player.collision = onCollision
@@ -147,8 +135,8 @@ function scene:create( event )
 	buttons[3].y = 300
 	buttons[3].myName = "trans"
 
-	local passosX = 0
-	local passosY = 0
+	passosX = 0
+	passosY = 0
 
 	
 	--local princesa1 = sprite.newSpriteSheet("sprite.png",require("princesa1").getSpriteSheetData())
@@ -193,17 +181,6 @@ function scene:create( event )
 	for j=1, #buttons do 
 		buttons[j]:addEventListener("touch", touchFunction)
 	end
-
-	
-
-	local update = function ()
-		player.x = player.x + passosX
-		player:play()
-		mte.update()
-	end
-
-	Runtime:addEventListener("enterFrame", update)
-
 
 	-- add physics to the princesa
 	
@@ -264,6 +241,15 @@ function scene:destroy( event )
 	physics = nil
 end
 
+
+function update(event)
+	print("babalu", mte.physics.getGravity())
+	mte.update()
+	player.x = player.x + passosX
+	player:play()
+	--mte.update()
+end
+
 ---------------------------------------------------------------------------------
 
 -- Listener setup
@@ -271,6 +257,7 @@ scene:addEventListener( "create", scene )
 scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
+Runtime:addEventListener("enterFrame", update)
 
 -----------------------------------------------------------------------------------------
 
