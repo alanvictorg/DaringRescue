@@ -3,23 +3,23 @@
 -- level1.lua
 --
 -----------------------------------------------------------------------------------------
---local sprite = require( "sprite" )
+
 local composer = require( "composer" )
 local scene = composer.newScene()
 local mte = require( "MTE.mte" ).createMTE()
--- include Corona's "physics" library
 
+------------------- CARREGANDO SOUNDS ---------------------------------------------------
+soundTable = {
+ backgroundsnd = audio.loadStream( "sounds/principal.ogg" ),
+ jump = audio.loadSound ("sounds/jump.ogg"),
+}
 
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
 
-
 local physicsData = (require "sprites.vertexes").physicsData(1)
 
-
 system.activate( "multitouch" )
-
-
 
 
 
@@ -32,8 +32,6 @@ local function onCollision(self, event)
 		player.jumping = false
 	end
 end
-
-
 
 
 function scene:create( event )
@@ -49,25 +47,15 @@ function scene:create( event )
 	mte.physics.start()
 	mte.physics.setGravity(0, 3)
 	--mte.physics.setDrawMode("hybrid")
-
-	-- We need physics started to add bodies, but we don't want the simulaton
-	-- running until the scene is on the screen.
-	--physics.pause()
-
-
-	-- create a grey rectangle as the backdrop
-	-- the physical screen will likely be a different shape than our defined content area
-	-- since we are going to position the background from it's top, left corner, draw the
-	-- background at the real top, left corner.
 	
-	
+---------- CARREGANDO MAPA -------------------------------------------------------
 	mte.toggleWorldWrapX(false)
 	mte.toggleWorldWrapY(false)
-	mte.loadMap("mapa.tmx")
+	mte.loadMap("maps/mapa.tmx")
 	mte.drawObjects()
 	map = mte.setCamera({levelPosX = 0, levelPosY = 0,blockScale = 15.5})
 	mte.constrainCamera()
-
+----------------------------------------------------------------------------------
 
 --[[	local background = display.newImageRect( "sprites/floresta.png", display.actualContentWidth, display.actualContentHeight)
 	background.anchorX = 0.08
@@ -144,17 +132,17 @@ function scene:create( event )
 
 	local buttons = {}
 
-	buttons[1] = display.newImage("arrowRight.png")
+	buttons[1] = display.newImage("icons/arrowRight.png")
 	buttons[1].x = 490
 	buttons[1].y = 300
 	buttons[1].myName = "right"
 
-	buttons[2] = display.newImage("arrowUp.png")
+	buttons[2] = display.newImage("icons/arrowUp.png")
 	buttons[2].x = -15
 	buttons[2].y = 300
 	buttons[2].myName = "up"
 
-	buttons[3] = display.newImage("gamepad.png")
+	buttons[3] = display.newImage("icons/gamepad.png")
 	buttons[3].x = 400
 	buttons[3].y = 300
 	buttons[3].myName = "trans"
@@ -175,7 +163,6 @@ function scene:create( event )
 	 
 	--instance1:prepare("princesa1")
 	--instance1:play()
-
 
 
 	local touchFunction = function(e)
@@ -218,25 +205,17 @@ function scene:create( event )
 	Runtime:addEventListener("enterFrame", update)
 
 
-	--function focusCameraInRen()
-	--	mte.setCameraFocus(player, 0, 226)
-	--end
-
-
-
 	-- add physics to the princesa
 	
 	
 	-- all display objects must be inserted int group
-	--sceneGroup:insert( background )
-	sceneGroup:insert( map )
-	--sceneGroup:insert( morro )
-	sceneGroup:insert( player )
 	
+	sceneGroup:insert( map )
+	sceneGroup:insert( player )	
+	--sceneGroup:insert( morro )
+	--sceneGroup:insert( background )
 	--sceneGroup:insert( princesa )
 	--sceneGroup:insert( monstro )
-	
-
 end
 
 

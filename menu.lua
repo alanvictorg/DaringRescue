@@ -6,6 +6,10 @@
 
 local composer = require( "composer" )
 local scene = composer.newScene()
+soundTable = {
+ backgroundsnd = audio.loadStream( "sounds/principal.ogg" ),
+ jump = audio.loadSound ("sounds/jump.ogg"),
+}
 
 
 -- include Corona's "widget" library
@@ -46,18 +50,17 @@ function scene:create( event )
 	titleLogo.y = 100
 	
 	-- create a widget button (which will loads level1.lua on release)
-	--playBtn = widget.newButton{
-	--	label="Play",
-	--	labelColor = { default={255}, over={128} },
-	--	default="button_play.png",
-	--	over="button-over.png",
-	--	width=154, height=40,
-	--	onRelease = onPlayBtnRelease	-- event listener function
-	--}
-	--playBtn.x = display.contentCenterX
-	--playBtn.y = display.contentHeight - 125
+	playBtn = widget.newButton{
+		labelColor = { default={255}, over={128} },
+		default="icons/button_play.png",
+		over="button-over.png",
+		width=154, height=40,
+		onRelease = onPlayBtnRelease	-- event listener function
+	}
+	playBtn.x = display.contentCenterX
+	playBtn.y = display.contentHeight - 125
 	
-	playBtn = display.newImage("button_play.png", display.contentCenterX, display.contentCenterY+40)
+	playBtn = display.newImage("icons/button_play.png", display.contentCenterX, display.contentCenterY+40)
 	playBtn:addEventListener("touch", onPlayBtnRelease)
 
 	-- all display objects must be inserted into group
@@ -73,7 +76,7 @@ function scene:show( event )
 	if phase == "will" then
 		-- Called when the scene is still off screen and is about to move on screen
 	elseif phase == "did" then
-		audio.play( soundTable["backgroundsnd"], {loops=-1})
+		audio.play( soundTable["sounds/backgroundsnd"], {loops=-1})
 		-- Called when the scene is now on screen
 		-- 
 		-- INSERT code here to make the scene come alive
