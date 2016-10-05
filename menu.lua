@@ -18,7 +18,6 @@ local widget = require "widget"
 --------------------------------------------
 
 -- forward declarations and other locals
-local pulo = false
 
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
@@ -94,6 +93,7 @@ function scene:hide( event )
 		-- INSERT code here to pause the scene
 		-- e.g. stop timers, stop animation, unload sounds, etc.)
 	elseif phase == "did" then
+		
 		-- Called when the scene is now off screen
 	end	
 end

@@ -7,6 +7,8 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 local mte = require( "MTE.mte" ).createMTE()
+local widget = require ("widget")
+local physics = require "physics"
 
 ------------------- CARREGANDO SOUNDS ---------------------------------------------------
 soundTable = {
@@ -17,7 +19,6 @@ soundTable = {
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
 
-local physicsData = (require "sprites.vertexes").physicsData(1)
 
 system.activate( "multitouch" )
 
@@ -32,6 +33,20 @@ local function onCollision(self, event)
 		player.jumping = false
 	end
 end
+
+
+local function collisionDie(event)
+		 
+	if((event.object1.myName=="player" and event.object2.myName=="monstro") or 
+	  (event.object1.myName=="monstro" and event.object2.myName=="player")) then
+	  	local function setgameOver()
+	   		local gameover = display.newImage("gameover.png", screenW/2-50, screenH-150)
+			gameover.xScale = 1.1
+		    gameover.yScale = 1.1
+	  end
+	 end 
+end
+
 
 
 function scene:create( event )
@@ -53,13 +68,12 @@ function scene:create( event )
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("maps/mapa.tmx")
 	mte.drawObjects()
-	map = mte.setCamera({levelPosX = 0, levelPosY = 0,blockScale = 15.5})
+	local map = mte.setCamera({levelPosX = 0, levelPosY = 0,blockScale = 14.5})
 	mte.constrainCamera()
 --------------------MOVIMENTAÇÃO SPRITES------------------------
 
 	local SheetInfo = require("sprites.sprites")
-	--local sheetData = {width=78, height=96, numFrames=3}
-
+	
 	local sheet = graphics.newImageSheet("sprites/sprites.png", SheetInfo:getSheet())
 
 	local sequencePrincesa = {
@@ -80,14 +94,12 @@ function scene:create( event )
 			layer = 1,	
 			levelPosX = playerProperties[1].x, 
 			levelPosY = playerProperties[1].y,
-			offscreenPhysics = true
+			name = "player"
 }
 
-	--player.x = display.contentWidth * .1
-	--player.y = 218
-	
-	mte.physics.addBody(player, "dynamic", {friction = 0.2, bounce = 0.0, density = 0.4 })
+	mte.physics.addBody(player, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
 	mte.addSprite(player, setup)
+	mte.moveCamera(0, -100)
 	mte.setCameraFocus(player)
 	mte.update()
 	--player:setSequence("princesaParada")
@@ -95,28 +107,32 @@ function scene:create( event )
 	player.collision = onCollision
  	player:addEventListener("collision")
 	
-	-- make a princesa (off-screen), position it, and rotate slightly
-	--local princesa = display.newImageRect( "sprites/princesa1.png", 90, 90 )
-	--princesa.x, princesa.y = 130, 230
-	--princesa.myName = "princesa1"
-	--physics.addBody( princesa, physicsData:get("princesa1"))
+	player.transformou = false
 
-	--local monstro = display.newImageRect( "sprites/monstro.png", 100, 100 )
-	--monstro.x, monstro.y = 300, 235
-	--monstro.myName = "monstro"
-	--physics.addBody( monstro, "static",physicsData:get("monstro"))
-
-	--local morro = display.newSprite(sheet, morro)
-
-	--morro.x, morro.y = 400, 242
-	--mte.physics.addBody(morro, "static", { friction = 0.1})
-	--morro:setSequence("morro")
-
+	local function destransformar( event )
+    	player:setSequence("princesaParada")
+    	player.transformou = false
+	end
 	
-	--local morro = display.newImageRect( "sprites/morro.png", 90, 90 )
-	--morro.x, morro.y = 400, 230
-	--morro.myName = "morro"
-	--physics.addBody(morro, "static", physicsData:get("morro"))
+	function functionTrans()
+		if(not transformou) then
+			player:setSequence("trans")
+			player.transformou = true
+			timer.performWithDelay(9000, destransformar)
+		else
+			player:setSequence("princesaParada")
+		end
+	end
+
+
+	local botaoTran = widget.newButton({
+		defaultFile = "icons/gamepad.png",
+		x = 400,
+		y = 300,
+		onRelease = player:setSequence("princesaParada")
+	})
+
+
 
 	local buttons = {}
 
@@ -130,27 +146,10 @@ function scene:create( event )
 	buttons[2].y = 300
 	buttons[2].myName = "up"
 
-	buttons[3] = display.newImage("icons/gamepad.png")
-	buttons[3].x = 400
-	buttons[3].y = 300
-	buttons[3].myName = "trans"
+
 
 	passosX = 0
 	passosY = 0
-
-	
-	--local princesa1 = sprite.newSpriteSheet("sprite.png",require("princesa1").getSpriteSheetData())
-	--local spriteSet1 = sprite.newSpriteSet(princesa1, 1,8)
-	--sprite.add(spriteSet1, "princesa1", 1, 6, 500, 0)
-	
-	--instance1 = sprite.newSprite( spriteSet1 )
-
-	--spriteInstance.x = 480
-	--spriteInstance.y = 320
-
-	 
-	--instance1:prepare("princesa1")
-	--instance1:play()
 
 
 	local touchFunction = function(e)
@@ -182,17 +181,10 @@ function scene:create( event )
 		buttons[j]:addEventListener("touch", touchFunction)
 	end
 
-	-- add physics to the princesa
-	
-	
-	-- all display objects must be inserted int group
 	
 	sceneGroup:insert( map )
 	sceneGroup:insert( player )	
-	--sceneGroup:insert( morro )
-	--sceneGroup:insert( background )
-	--sceneGroup:insert( princesa )
-	--sceneGroup:insert( monstro )
+	
 end
 
 
@@ -204,10 +196,7 @@ function scene:show( event )
 		-- Called when the scene is still off screen and is about to move on screen
 		
 	elseif phase == "did" then
-		-- Called when the scene is now on screen
-		-- 
-		-- INSERT code here to make the scene come alive
-		-- e.g. start timers, begin animation, play audio, etc.
+		audio.play( soundTable["backgroundsnd"], {loops=-1})
 		physics.start()
 	end
 end
@@ -243,11 +232,11 @@ end
 
 
 function update(event)
-	print("babalu", mte.physics.getGravity())
-	mte.update()
+	--print("babalu", mte.physics.getGravity())
+	
 	player.x = player.x + passosX
 	player:play()
-	--mte.update()
+	mte.update()
 end
 
 ---------------------------------------------------------------------------------
