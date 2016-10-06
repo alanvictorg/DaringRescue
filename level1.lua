@@ -124,7 +124,6 @@ function scene:create( event )
 		end
 	end
 
-
 	local botaoTran = widget.newButton({
 		defaultFile = "icons/gamepad.png",
 		x = 400,

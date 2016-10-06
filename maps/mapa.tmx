@@ -943,7 +943,7 @@
   <properties>
    <property name="spriteLayer" value="true"/>
   </properties>
-  <object id="2" name="player" x="239" y="115"/>
+  <object id="2" name="player" x="47" y="115"/>
   <object id="5" x="45.3333" y="101.333" visible="0">
    <ellipse/>
   </object>
