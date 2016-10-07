@@ -9,7 +9,7 @@ local scene = composer.newScene()
 local mte = require( "MTE.mte" ).createMTE()
 local widget = require ("widget")
 local physics = require "physics"
-
+local progressRing = require("progressRing")
 ------------------- CARREGANDO SOUNDS ---------------------------------------------------
 soundTable = {
  backgroundsnd = audio.loadStream( "sounds/principal.ogg" ),
@@ -27,6 +27,15 @@ system.activate( "multitouch" )
 -- forward declarations and other locals
 local screenW, screenH, halfW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX
 
+local centerX = display.contentCenterX
+local centerY = display.contentCenterY
+local screenTop = display.screenOriginY
+local screenLeft = display.screenOriginX
+local screenBottom = display.screenOriginY+display.actualContentHeight
+local screenRight = display.screenOriginX+display.actualContentWidth
+local screenWidth = screenRight - screenLeft
+local screenHeight = screenBottom - screenTop
+
 
 local function onCollision(self, event)
 	if(event.other.name == "ground" and event.phase == "began") then
@@ -34,18 +43,6 @@ local function onCollision(self, event)
 	end
 end
 
-
-local function collisionDie(event)
-		 
-	if((event.object1.myName=="player" and event.object2.myName=="monstro") or 
-	  (event.object1.myName=="monstro" and event.object2.myName=="player")) then
-	  	local function setgameOver()
-	   		local gameover = display.newImage("gameover.png", screenW/2-50, screenH-150)
-			gameover.xScale = 1.1
-		    gameover.yScale = 1.1
-	  end
-	 end 
-end
 
 
 
@@ -60,7 +57,7 @@ function scene:create( event )
 
 	mte.enableBox2DPhysics()
 	mte.physics.start()
-	mte.physics.setGravity(0, 3)
+	mte.physics.setGravity(0, 9.8)
 	--mte.physics.setDrawMode("hybrid")
 	
 ---------- CARREGANDO MAPA -------------------------------------------------------
@@ -82,54 +79,84 @@ function scene:create( event )
 		{ name = "trans", frames={2,3}, time= 900,loopCount = 0 },
 	}
 
-	local morro = {
-		{ name = "morro", frames={1}, time = 1000, loopCount = 0 },
-	}
 
 	local playerProperties = mte.getObject({name = "player"})
 
 	player = display.newSprite(sheet, sequencePrincesa)
+	
 	local setup = {
 			kind = "sprite",
 			layer = 1,	
 			levelPosX = playerProperties[1].x, 
 			levelPosY = playerProperties[1].y,
-			name = "player"
-}
+			
+	}
 
 	mte.physics.addBody(player, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
 	mte.addSprite(player, setup)
-	mte.moveCamera(0, -100)
 	mte.setCameraFocus(player)
 	mte.update()
-	--player:setSequence("princesaParada")
+	player:setSequence("princesaParada")
+	player:play()
+	player.transformou = false
 	player.isFixedRotation = true
 	player.collision = onCollision
  	player:addEventListener("collision")
 	
-	player.transformou = false
+	
 
-	local function destransformar( event )
+local function destransformar( event )
     	player:setSequence("princesaParada")
     	player.transformou = false
+    	relogio:removeSelf()
+    	relogio = nil
 	end
 	
-	function functionTrans()
-		if(not transformou) then
-			player:setSequence("trans")
-			player.transformou = true
-			timer.performWithDelay(9000, destransformar)
-		else
-			player:setSequence("princesaParada")
+
+
+	local function functionTrans( event )
+		if ( "ended" == event.phase ) then
+			if(not transformou) then
+				player:setSequence("trans")
+				player.transformou = true
+				timer.performWithDelay(10000, destransformar)
+
+				 relogio = progressRing.new({
+				     radius = 30,
+				     bgColor = {.29, .29, .29, 1},
+				     ringColor = {243/255, 126/255, 48/255, 1},
+				     ringDepth = .1,
+				     strokeWidth = 2,
+				     strokeColor = {1,1,1,1},
+				     time = 4000,
+				     topImage = "icons/relogio-bg.png"
+				})
+
+				relogio:goTo(1, 9000)
+
+				relogio.x, relogio.y = 10, 40
+				sceneGroup:insert( relogio )
+	
+
+			else
+				player:setSequence("princesaParada")
+				player:play()
+			end
 		end
 	end
 
+	
+	
+	
+	
 	local botaoTran = widget.newButton({
 		defaultFile = "icons/gamepad.png",
 		x = 400,
 		y = 300,
-		onRelease = player:setSequence("princesaParada")
+		onEvent = functionTrans
 	})
+	
+
 
 
 
@@ -161,15 +188,13 @@ function scene:create( event )
 			elseif e.target.myName == "up" then
 				if(not player.jumping) then
 					player.jumping = true
-					player:applyLinearImpulse(0, -0.6, player.x, player.y)
+					player:applyLinearImpulse(0, -150, player.x, player.y)
 				end
-			elseif e.target.myName == "trans" then
-				player:setSequence("trans")
 			end
 		else
 			passosX = 0
 			player:setSequence("princesaParada")
-
+			player:play()
 		end
 	end
 
@@ -180,9 +205,8 @@ function scene:create( event )
 		buttons[j]:addEventListener("touch", touchFunction)
 	end
 
-	
+
 	sceneGroup:insert( map )
-	sceneGroup:insert( player )	
 	
 end
 
