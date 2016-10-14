@@ -37,12 +37,12 @@ local screenWidth = screenRight - screenLeft
 local screenHeight = screenBottom - screenTop
 
 
-local function onCollision(self, event)
-	if(event.other.name == "ground" and event.phase == "began") then
-		player.jumping = false
+local function oncollision( event )
+		if (event.other and event.phase == "began") then
+			player.canJump = 0  
+			print(event.other) 
+	    end
 	end
-end
-
 
 
 
@@ -60,14 +60,16 @@ function scene:create( event )
 	mte.physics.setGravity(0, 9.8)
 	--mte.physics.setDrawMode("hybrid")
 	
----------- CARREGANDO MAPA -------------------------------------------------------
+------------------------ CARREGANDO MAPA ---------------------------------
+
 	mte.toggleWorldWrapX(false)
 	mte.toggleWorldWrapY(false)
 	mte.loadMap("maps/mapa.tmx")
 	mte.drawObjects()
 	local map = mte.setCamera({levelPosX = 0, levelPosY = 0,blockScale = 14.5})
 	mte.constrainCamera()
---------------------MOVIMENTAÇÃO SPRITES------------------------
+
+-------------------- ADICIONANDO PLAYER E INIMIGO ------------------------
 
 	local SheetInfo = require("sprites.sprites")
 	
@@ -79,11 +81,18 @@ function scene:create( event )
 		{ name = "trans", frames={2,3}, time= 900,loopCount = 0 },
 	}
 
+	local sequenceInimigo = {
+		{ name = "inimigoParado", frames ={4}, time = 1000, loopCount = 0 },
+	}
 
 	local playerProperties = mte.getObject({name = "player"})
 
+	local playerPropertiesI = mte.getObject({name = "inimigo"})
+
 	player = display.newSprite(sheet, sequencePrincesa)
 	
+	inimigo = display.newSprite(sheet, sequenceInimigo)
+
 	local setup = {
 			kind = "sprite",
 			layer = 1,	
@@ -92,27 +101,45 @@ function scene:create( event )
 			
 	}
 
+	local setupI = {
+			kind = "sprite",
+			layer = 1,	
+			levelPosX = playerPropertiesI[1].x, 
+			levelPosY = playerPropertiesI[1].y,
+			
+	}
+
+	
+
 	mte.physics.addBody(player, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
+	mte.physics.addBody(inimigo, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
+
+	
+
 	mte.addSprite(player, setup)
+	mte.addSprite(inimigo, setupI)
+
+	transition.to(inimigo,{ x = 800, time=2000})
+
 	mte.setCameraFocus(player)
 	mte.update()
 	player:setSequence("princesaParada")
 	player:play()
 	player.transformou = false
 	player.isFixedRotation = true
-	player.collision = onCollision
- 	player:addEventListener("collision")
+	player.canJump = 0
+	player.collision = collision
+	player:addEventListener( "collision", oncollision )
 	
-	
+--------------------- TRANSFORMAR PLAYER --------------------------------------
 
-local function destransformar( event )
+	local function destransformar( event )
     	player:setSequence("princesaParada")
     	player.transformou = false
     	relogio:removeSelf()
     	relogio = nil
 	end
 	
-
 
 	local function functionTrans( event )
 		if ( "ended" == event.phase ) then
@@ -145,9 +172,19 @@ local function destransformar( event )
 		end
 	end
 
+--------------------------- PULO --------------------------------------
+
+	local function jump( event )
+		if(player.canJump < 1) then
+			player.canJump = player.canJump + 1
+			player:applyLinearImpulse(0, -170, player.x, player.y)
+			audio.play( soundTable["jump"], {loops=1})
+		end
+	end
 	
 	
-	
+
+--------------------- BOTÕES ------------------------------------------
 	
 	local botaoTran = widget.newButton({
 		defaultFile = "icons/gamepad.png",
@@ -156,8 +193,12 @@ local function destransformar( event )
 		onEvent = functionTrans
 	})
 	
-
-
+	local jumpbtn = widget.newButton({
+		defaultFile = "icons/arrowUp.png",
+		x = -15,
+		y = 300,
+		onRelease = jump
+	})
 
 
 	local buttons = {}
@@ -167,11 +208,10 @@ local function destransformar( event )
 	buttons[1].y = 300
 	buttons[1].myName = "right"
 
-	buttons[2] = display.newImage("icons/arrowUp.png")
+	--[[buttons[2] = display.newImage("icons/arrowUp.png")
 	buttons[2].x = -15
 	buttons[2].y = 300
-	buttons[2].myName = "up"
-
+	buttons[2].myName = "up"]]--
 
 
 	passosX = 0
@@ -184,12 +224,6 @@ local function destransformar( event )
 				player:setSequence("princesaAndando")
 				passosX = 3
 				passosY = 0
-				
-			elseif e.target.myName == "up" then
-				if(not player.jumping) then
-					player.jumping = true
-					player:applyLinearImpulse(0, -150, player.x, player.y)
-				end
 			end
 		else
 			passosX = 0
@@ -219,7 +253,6 @@ function scene:show( event )
 		-- Called when the scene is still off screen and is about to move on screen
 		
 	elseif phase == "did" then
-		audio.play( soundTable["backgroundsnd"], {loops=-1})
 		physics.start()
 	end
 end
@@ -255,7 +288,7 @@ end
 
 
 function update(event)
-	--print("babalu", mte.physics.getGravity())
+	
 	
 	player.x = player.x + passosX
 	player:play()

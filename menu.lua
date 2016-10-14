@@ -44,15 +44,15 @@ function scene:create( event )
 	background.y = 0 + display.screenOriginY
 	
 	-- create/position logo/title image on upper-half of the screen
-	local titleLogo = display.newImageRect( "icons/logo.png", 264, 42 )
+	local titleLogo = display.newImageRect( "icons/logog.png", 170, 80 )
 	titleLogo.x = display.contentCenterX
 	titleLogo.y = 100
 	
 	-- create a widget button (which will loads level1.lua on release)
 	playBtn = widget.newButton{
 		labelColor = { default={255}, over={128} },
-		default="icons/button_play.png",
-		over="button-over.png",
+		--default="icons/button_play.png",
+		--over="button-over.png",
 		width=154, height=40,
 		onRelease = onPlayBtnRelease	-- event listener function
 	}
@@ -75,7 +75,7 @@ function scene:show( event )
 	if phase == "will" then
 		-- Called when the scene is still off screen and is about to move on screen
 	elseif phase == "did" then
-		audio.play( soundTable["sounds/backgroundsnd"], {loops=-1})
+		--audio.play(soundTable["backgroundsnd"], {loops=-1})
 		-- Called when the scene is now on screen
 		-- 
 		-- INSERT code here to make the scene come alive
