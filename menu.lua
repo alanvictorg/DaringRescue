@@ -7,7 +7,7 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 soundTable = {
- backgroundsnd = audio.loadStream( "sounds/principal.ogg" ),
+ backgroundsnd = audio.loadStream( "sounds/forest.mp3" ),
  jump = audio.loadSound ("sounds/jump.ogg"),
 }
 
@@ -23,6 +23,7 @@ local widget = require "widget"
 local function onPlayBtnRelease()
 	
 	-- go to level1.lua scene
+	composer.removeScene("menu")
 	composer.gotoScene( "level1", "fade", 500 )
 	
 	return true	-- indicates successful touch
@@ -44,16 +45,12 @@ function scene:create( event )
 	background.y = 0 + display.screenOriginY
 	
 	-- create/position logo/title image on upper-half of the screen
-	local titleLogo = display.newImageRect( "icons/logog.png", 170, 80 )
+	local titleLogo = display.newImageRect( "icons/name.png", 250, 50 )
 	titleLogo.x = display.contentCenterX
 	titleLogo.y = 100
 	
 	-- create a widget button (which will loads level1.lua on release)
 	playBtn = widget.newButton{
-		labelColor = { default={255}, over={128} },
-		--default="icons/button_play.png",
-		--over="button-over.png",
-		width=154, height=40,
 		onRelease = onPlayBtnRelease	-- event listener function
 	}
 	playBtn.x = display.contentCenterX
@@ -106,10 +103,9 @@ function scene:destroy( event )
 	-- INSERT code here to cleanup the scene
 	-- e.g. remove display objects, remove touch listeners, save state, etc.
 	
-	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
-	end
+	
 end
 
 ---------------------------------------------------------------------------------

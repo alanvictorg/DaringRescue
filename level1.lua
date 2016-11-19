@@ -6,10 +6,11 @@
 
 local composer = require( "composer" )
 local scene = composer.newScene()
-local mte = require( "MTE.mte" ).createMTE()
+local mte = require( "lib.MTE.mte" ).createMTE()
 local widget = require ("widget")
 local physics = require "physics"
-local progressRing = require("progressRing")
+local progressRing = require("lib.progressRing")
+
 ------------------- CARREGANDO SOUNDS ---------------------------------------------------
 soundTable = {
  backgroundsnd = audio.loadStream( "sounds/principal.ogg" ),
@@ -35,15 +36,80 @@ local screenBottom = display.screenOriginY+display.actualContentHeight
 local screenRight = display.screenOriginX+display.actualContentWidth
 local screenWidth = screenRight - screenLeft
 local screenHeight = screenBottom - screenTop
+local currentChar
+
+local function inimigosUpdate (inimigo, player)
+	local camX, camY = mte.getCamera().levelPosX, mte.getCamera().levelPosY
+	local startCamX, startCamY = camX - screenW / 2, camY - screenH / 2;
+	local isEnemyOnScreen = inimigo.x > startCamX and inimigo.x < startCamX + screenW
+	local screenW, screenH = display.contentWidth, display.contentHeight;
+
+	if isEnemyOnScreen then
+		if player.x < inimigo.x then
+
+			--follow left
+
+			inimigo:setSequence("inimigo")
+
+			inimigo.x = inimigo.x - 2
+
+		elseif player.x > inimigo.x then
+
+			--follow right
+
+			inimigo:setSequence("inimigo")
+
+			inimigo.x = inimigo.x + 2
+
+		end
+	end
+	inimigo:play()
+end
 
 
-local function oncollision( event )
-		if (event.other and event.phase == "began") then
-			player.canJump = 0  
-			print(event.other) 
-	    end
+local function oncollision( self, event )
+	if (event.other.name == "ground" and event.phase == "began") then
+		player.canJump = 0  
+    elseif (event.other.myName == "inimigo") then
+    	if (event.phase == "began") then
+    		player.hpBonus = -1
+    	else
+    		player.hpBonus = 0
+    	end
+	end
+end
+
+
+local function die()
+	audio.stop()
+	player:removeSelf()
+	inimigo:removeSelf()
+	mte.physics.setGravity(0, 0)
+	local options = {
+		effect = "fade",
+		time = 500,
+		params = {}
+	}
+	composer.removeScene("level1")
+	composer.gotoScene("gameover", options)
+end
+
+
+local function setupStatus()
+	if hpRect ~= nil then
+		hpRect:removeSelf()
 	end
 
+	player.hp = player.hp + player.hpBonus
+
+	hpRect = display.newRoundedRect(0, 20, player.hp, 10, 12)
+	hpRect.anchorX = 0
+	hpRect:setFillColor(1, 0, 0)
+
+	if player.hp <= 0 then
+		die()
+	end
+end
 
 
 function scene:create( event )
@@ -71,27 +137,38 @@ function scene:create( event )
 
 -------------------- ADICIONANDO PLAYER E INIMIGO ------------------------
 
-	local SheetInfo = require("sprites.sprites")
+	local SheetInfo = require("sprites.spritesGame")
 	
-	local sheet = graphics.newImageSheet("sprites/sprites.png", SheetInfo:getSheet())
+	local sheet = graphics.newImageSheet("sprites/spritesGame.png", SheetInfo:getSheet())
 
 	local sequencePrincesa = {
-		{ name = "princesaParada", frames={6,7}, time = 1000, loopCount = 0},
-		{ name = "princesaAndando", frames={10,11}, time = 900, loopCount = 0},
-		{ name = "trans", frames={2,3}, time= 900,loopCount = 0 },
+		{ name = "princesaParada", frames={7,8}, time = 1000, loopCount = 0},
+		{ name = "walkRight", frames={21,22,23,24}, time = 900, loopCount = 0},
+		{ name = "trans", frames={10,11}, time= 900,loopCount = 0 },
+		{ name = "walkLeft", frames={15,16,17,18,19,20}, time = 900, loopCount = 0},
+		{ name = "transAndando", frames={10,11,12,13,14}, time= 900,loopCount = 0 },
 	}
 
 	local sequenceInimigo = {
-		{ name = "inimigoParado", frames ={4}, time = 1000, loopCount = 0 },
+		{ name = "inimigo", frames ={3,4,5,6}, time = 1000, loopCount = 0 },
+	}
+
+	local principe = {
+		{ name = "principe", frames ={9}, time = 1000, loopCount = 0 },
 	}
 
 	local playerProperties = mte.getObject({name = "player"})
 
 	local playerPropertiesI = mte.getObject({name = "inimigo"})
 
+	local playerPropertiesII = mte.getObject({name = "principe"})
+
 	player = display.newSprite(sheet, sequencePrincesa)
 	
 	inimigo = display.newSprite(sheet, sequenceInimigo)
+
+	principe = display.newSprite(sheet, principe)
+
 
 	local setup = {
 			kind = "sprite",
@@ -109,27 +186,47 @@ function scene:create( event )
 			
 	}
 
+	local setupII = {
+			kind = "sprite",
+			layer = 1,	
+			levelPosX = playerPropertiesII[1].x, 
+			levelPosY = playerPropertiesII[1].y,
+			
+	}
+
 	
 
 	mte.physics.addBody(player, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
 	mte.physics.addBody(inimigo, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
+	mte.physics.addBody(principe, "dynamic", {friction = 0.2, bounce = 0.0, density = 2 })
 
 	
 
 	mte.addSprite(player, setup)
 	mte.addSprite(inimigo, setupI)
-
-	transition.to(inimigo,{ x = 800, time=2000})
-
+	mte.addSprite(principe, setupII)
+	
 	mte.setCameraFocus(player)
 	mte.update()
 	player:setSequence("princesaParada")
+	player.myName = "player"
+	--player.xScale = 1.70
+	--player.yScale = 1.70
 	player:play()
 	player.transformou = false
 	player.isFixedRotation = true
 	player.canJump = 0
-	player.collision = collision
-	player:addEventListener( "collision", oncollision )
+	player.hp = 100
+	player.hpBonus = 0
+	player.collision = oncollision
+	player:addEventListener( "collision")
+	
+	inimigo:setSequence("inimigo")
+	inimigo.myName = "inimigo"
+	inimigo:play()
+	transition.moveTo(inimigo , {player.x, player.y, time=100})
+	
+	setupStatus()
 	
 --------------------- TRANSFORMAR PLAYER --------------------------------------
 
@@ -161,10 +258,8 @@ function scene:create( event )
 
 				relogio:goTo(1, 9000)
 
-				relogio.x, relogio.y = 10, 40
+				relogio.x, relogio.y = 450, 40
 				sceneGroup:insert( relogio )
-	
-
 			else
 				player:setSequence("princesaParada")
 				player:play()
@@ -187,7 +282,7 @@ function scene:create( event )
 --------------------- BOTÕES ------------------------------------------
 	
 	local botaoTran = widget.newButton({
-		defaultFile = "icons/gamepad.png",
+		defaultFile = "icons/buttonY.png",
 		x = 400,
 		y = 300,
 		onEvent = functionTrans
@@ -195,24 +290,29 @@ function scene:create( event )
 	
 	local jumpbtn = widget.newButton({
 		defaultFile = "icons/arrowUp.png",
-		x = -15,
-		y = 300,
+		x = 15,
+		y = 297,
 		onRelease = jump
 	})
 
-
+	local botaoAtaque = widget.newButton({
+		defaultFile = "icons/buttonX.png",
+		x = 490,
+		y = 300,
+		--onEvent = functionAtack
+	})
+	
 	local buttons = {}
 
 	buttons[1] = display.newImage("icons/arrowRight.png")
-	buttons[1].x = 490
+	buttons[1].x = 60
 	buttons[1].y = 300
 	buttons[1].myName = "right"
 
-	--[[buttons[2] = display.newImage("icons/arrowUp.png")
-	buttons[2].x = -15
+	buttons[2] = display.newImage("icons/arrowLeft.png")
+	buttons[2].x = -27
 	buttons[2].y = 300
-	buttons[2].myName = "up"]]--
-
+	buttons[2].myName = "left"
 
 	passosX = 0
 	passosY = 0
@@ -221,14 +321,36 @@ function scene:create( event )
 	local touchFunction = function(e)
 		if e.phase == "began" or e.phase == "moved" then
 			if e.target.myName == "right" then
-				player:setSequence("princesaAndando")
-				passosX = 3
-				passosY = 0
+				if (player.transformou) then
+					player:setSequence("transAndando")
+					passosX = 3
+					passosY = 0
+				else
+					player:setSequence("walkRight")
+					passosX = 3
+					passosY = 0
+				end
+				else if e.target.myName == "left" then
+					if (player.transformou) then
+					player:setSequence("transAndando")
+					passosX = -3
+					passosY = 0
+					else
+						player:setSequence("walkLeft")
+						passosX = -3
+						passosY = 0
+					end
+				end
 			end
-		else
+		else if (player.transformou) then
 			passosX = 0
-			player:setSequence("princesaParada")
+			player:setSequence("trans")
 			player:play()
+			else
+				passosX = 0
+				player:setSequence("princesaParada")
+				player:play()
+			end
 		end
 	end
 
@@ -241,7 +363,13 @@ function scene:create( event )
 
 
 	sceneGroup:insert( map )
-	
+	sceneGroup:insert(hpRect)
+	sceneGroup:insert(jumpbtn)
+	sceneGroup:insert(botaoTran)
+	sceneGroup:insert(botaoAtaque)
+	sceneGroup:insert(buttons[1])
+	sceneGroup:insert(buttons[2])
+
 end
 
 
@@ -275,24 +403,27 @@ function scene:hide( event )
 end
 
 function scene:destroy( event )
-
-	-- Called prior to the removal of scene's "view" (sceneGroup)
-	-- 
-	-- INSERT code here to cleanup the scene
-	-- e.g. remove display objects, remove touch listeners, save state, etc.
 	local sceneGroup = self.view
-	
 	package.loaded[physics] = nil
 	physics = nil
+	
+	Runtime:removeEventListener("enterFrame", update)
+
+	
+	
 end
 
 
 function update(event)
 	
-	
+	setupStatus()
 	player.x = player.x + passosX
 	player:play()
+	inimigosUpdate(inimigo, player)
 	mte.update()
+
+
+
 end
 
 ---------------------------------------------------------------------------------
